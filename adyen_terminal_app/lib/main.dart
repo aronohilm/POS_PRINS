@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'settings.dart';
+import 'terminal_connection_page.dart';
+import 'qr_code.dart';
+import 'logs_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Add these imports for the page classes used in the drawer
 
@@ -314,13 +317,36 @@ if (apiKey == null || endpoint == null || poiId == null) {
                   ), 
                   const Divider(),
                   ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: const Text('Stillingar'),
+                    leading: const Icon(Icons.point_of_sale),
+                    title: const Text('Tenging við Prins'),
                     onTap: () {
                       Navigator.pop(context); // Close the drawer first
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                        MaterialPageRoute(builder: (context) => const TerminalConnectionPage()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.receipt_long),
+                    title: const Text('Færslulisti'),
+                    onTap: () {
+                      Navigator.pop(context); // Close the drawer first
+                      Navigator.push(
+                        context,
+                        /*MaterialPageRoute(builder: (context) => const SettingsPage()*/
+                        MaterialPageRoute(builder: (context) => const LogsPage()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.qr_code),
+                    title: const Text('QR CODE'),
+                    onTap: () {
+                      Navigator.pop(context); // Close the drawer first
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QRCodeScannerPage()),
                       );
                     },
                   ),
@@ -441,7 +467,7 @@ if (apiKey == null || endpoint == null || poiId == null) {
                         controller: TextEditingController(
                           text: _amount.isEmpty
                               ? ''
-                              : '${(_amount)} ISK',
+                              : '${(_amount)} EUR',
                         ),
                         textAlign: TextAlign.right,
                         style: TextStyle(
