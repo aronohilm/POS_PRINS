@@ -346,7 +346,7 @@ if (apiKey == null || endpoint == null || poiId == null) {
                       Navigator.pop(context); // Close the drawer first
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const QRCodeScannerPage()),
+                        MaterialPageRoute(builder: (context) => const ScanApiKeyPage()),
                       );
                     },
                   ),
