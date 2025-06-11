@@ -35,8 +35,8 @@ class _TerminalConnectionPageState extends State<TerminalConnectionPage> {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _endpointController.text = prefs.getString('endpoint') ?? 'https://terminal-api-test.adyen.com/connectedTerminals';
-        _apiKeyController.text = prefs.getString('api_key') ?? 'AQEqhmfxL43JaxFCw0m/n3Q5qf3Ve59fDIZHTXfy5UT9AM9RlDqYku8lh1U2EMFdWw2+5HzctViMSCJMYAc=-iql6F+AYb1jkHn3zzDBcXZZvYzXFr9wd1iCR9y2JDU0=-i1i{=<;wFH*jLc94NQe';
-        _merchantAccountController.text = prefs.getString('merchant_account') ?? 'Straumur_POS_BJARNI_DEFAULT_TEST';
+        _apiKeyController.text = prefs.getString('api_key') ?? '';
+        _merchantAccountController.text = prefs.getString('merchant_account') ?? '';
         _selectedTerminal = prefs.getString('selected_terminal');
       });
       if (_endpointController.text.isNotEmpty && _apiKeyController.text.isNotEmpty && _merchantAccountController.text.isNotEmpty) {

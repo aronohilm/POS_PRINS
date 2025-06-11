@@ -14,6 +14,7 @@ class ScanApiKeyPage extends StatefulWidget {
 class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
   String _scanResult = '';
   bool _isLoading = false;
+  final TextEditingController _terminalSuffixController = TextEditingController();
 
   Future<void> _triggerBarcodeScan() async {
     setState(() {
@@ -21,16 +22,16 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
       _scanResult = '';
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    final apiKey = prefs.getString('api_key');
-
-    if (apiKey == null) {
+    final terminalSuffix = _terminalSuffixController.text.trim();
+    if (terminalSuffix.length != 3) {
       setState(() {
-        _scanResult = 'API key missing in settings';
+        _scanResult = 'Please enter last 3 digits of POIID';
         _isLoading = false;
       });
       return;
     }
+
+    final fullPoiId = 'S1F2L-000158251517$terminalSuffix';
 
     final sessionId = Random().nextInt(999999);
     final now = DateTime.now().toUtc();
@@ -40,7 +41,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
     final scanPayload = {
       "Session": {
         "Id": sessionId,
-        "Type": "Begin"
+        "Type": "Once"
       },
       "Operation": [
         {
@@ -61,7 +62,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
           "MessageType": "Request",
           "SaleID": saleId,
           "ServiceID": serviceId,
-          "POIID": "local"
+          "POIID": fullPoiId
         },
         "AdminRequest": {
           "ServiceIdentification": encodedPayload
@@ -71,34 +72,38 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://127.0.0.1:8443/nexo"),
+        Uri.parse("https://terminal-api-test.adyen.com/sync"),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode(payload),
       );
 
-      debugPrint("RESPONSE: ${response.body}");
       final body = jsonDecode(response.body);
       final additionalResponse = body['SaleToPOIResponse']?['AdminResponse']?['Response']?['AdditionalResponse'];
       if (additionalResponse != null) {
-        final decoded = Uri.decodeComponent(additionalResponse);
-        if (decoded.startsWith("additionalData=")) {
-          final jsonPart = decoded.replaceFirst("additionalData=", "");
-          final parsed = jsonDecode(jsonPart);
-          final scannedData = parsed['Barcode']?['Data'];
+        final parts = additionalResponse.split('additionalData=');
+        if (parts.length > 1) {
+          final jsonPart = Uri.decodeFull(parts[1]);
+          try {
+            final parsed = jsonDecode(jsonPart);
+            final scannedData = parsed['Barcode']?['Data'];
 
-          if (scannedData != null && scannedData is String) {
-            await prefs.setString('api_key', scannedData);
-            setState(() => _scanResult = 'API Key saved: $scannedData');
-          } else {
-            setState(() => _scanResult = 'No valid data scanned');
+            if (scannedData != null && scannedData is String) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('api_key', scannedData);
+              setState(() => _scanResult = 'API Key updated in settings');
+            } else {
+              setState(() => _scanResult = 'No valid API key scanned');
+            }
+          } catch (e) {
+            setState(() => _scanResult = 'Invalid scan response');
           }
         } else {
-          setState(() => _scanResult = 'Unexpected format: $decoded');
+          setState(() => _scanResult = 'Unexpected response format');
         }
       } else {
-        setState(() => _scanResult = 'No response received');
+        setState(() => _scanResult = 'No response received. The scanner might still be busy. Please wait a few seconds and try again.');
       }
     } catch (e) {
       setState(() => _scanResult = 'Error: $e');
@@ -119,6 +124,16 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            TextFormField(
+              controller: _terminalSuffixController,
+              maxLength: 3,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Enter last 3 digits of POIID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _isLoading ? null : _triggerBarcodeScan,
               style: ElevatedButton.styleFrom(
