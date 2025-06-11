@@ -83,15 +83,20 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
       final body = jsonDecode(response.body);
       final additionalResponse = body['SaleToPOIResponse']?['AdminResponse']?['Response']?['AdditionalResponse'];
       if (additionalResponse != null) {
-        final decoded = utf8.decode(base64.decode(additionalResponse));
-        final parsed = jsonDecode(decoded);
-        final scannedData = parsed['Barcode']?['Data'];
+        final decoded = Uri.decodeComponent(additionalResponse);
+        if (decoded.startsWith("additionalData=")) {
+          final jsonPart = decoded.replaceFirst("additionalData=", "");
+          final parsed = jsonDecode(jsonPart);
+          final scannedData = parsed['Barcode']?['Data'];
 
-        if (scannedData != null && scannedData is String) {
-          await prefs.setString('api_key', scannedData);
-          setState(() => _scanResult = 'API Key saved: $scannedData');
+          if (scannedData != null && scannedData is String) {
+            await prefs.setString('api_key', scannedData);
+            setState(() => _scanResult = 'API Key saved: $scannedData');
+          } else {
+            setState(() => _scanResult = 'No valid data scanned');
+          }
         } else {
-          setState(() => _scanResult = 'No valid data scanned');
+          setState(() => _scanResult = 'Unexpected format: $decoded');
         }
       } else {
         setState(() => _scanResult = 'No response received');
