@@ -22,6 +22,9 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
       _scanResult = '';
     });
 
+    // Hardcode terminal IP for local communication
+    final terminalIp = '127.0.0.1';
+
     final terminalSuffix = _terminalSuffixController.text.trim();
     if (terminalSuffix.length != 3) {
       setState(() {
@@ -41,12 +44,12 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
     final scanPayload = {
       "Session": {
         "Id": sessionId,
-        "Type": "Once"
+        "Type": "Begin"
       },
       "Operation": [
         {
           "Type": "ScanBarcode",
-          "TimeoutMs": 10000
+          "TimeoutMs": 5000
         }
       ]
     };
@@ -72,7 +75,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://terminal-api-test.adyen.com/sync"),
+        Uri.parse("https://$terminalIp:8443/nexo"),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -82,6 +85,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
       final body = jsonDecode(response.body);
       final additionalResponse = body['SaleToPOIResponse']?['AdminResponse']?['Response']?['AdditionalResponse'];
       if (additionalResponse != null) {
+        print('AdditionalResponse: $additionalResponse');
         final parts = additionalResponse.split('additionalData=');
         if (parts.length > 1) {
           final jsonPart = Uri.decodeFull(parts[1]);
