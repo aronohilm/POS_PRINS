@@ -23,11 +23,10 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
 
     final prefs = await SharedPreferences.getInstance();
     final apiKey = prefs.getString('api_key');
-    final poiId = prefs.getString('selected_terminal');
 
-    if (apiKey == null || poiId == null) {
+    if (apiKey == null) {
       setState(() {
-        _scanResult = 'API key or POI ID missing in settings';
+        _scanResult = 'API key missing in settings';
         _isLoading = false;
       });
       return;
@@ -41,7 +40,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
     final scanPayload = {
       "Session": {
         "Id": sessionId,
-        "Type": "Once"
+        "Type": "Begin"
       },
       "Operation": [
         {
@@ -62,7 +61,7 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
           "MessageType": "Request",
           "SaleID": saleId,
           "ServiceID": serviceId,
-          "POIID": poiId
+          "POIID": "local"
         },
         "AdminRequest": {
           "ServiceIdentification": encodedPayload
@@ -72,14 +71,14 @@ class _ScanApiKeyPageState extends State<ScanApiKeyPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://terminal-api-test.adyen.com/sync"),
+        Uri.parse("https://127.0.0.1:8443/nexo"),
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': apiKey,
         },
         body: jsonEncode(payload),
       );
 
+      debugPrint("RESPONSE: ${response.body}");
       final body = jsonDecode(response.body);
       final additionalResponse = body['SaleToPOIResponse']?['AdminResponse']?['Response']?['AdditionalResponse'];
       if (additionalResponse != null) {
